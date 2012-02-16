@@ -3,12 +3,37 @@ Rails Resque Scheduler Example
 
 This is an example rails app that shows how to use resque + resque scheduler to run delayed jobs and scheduled jobs.
 
+## Getting Started
+
+**Dependencies**: Resque requires redis to run. Our initializer assumes redis is running locally. If you have another redis server running elsewhere, change it in `/config/initializers/resque.rb`.
+
+Start the rails server and resque admin: `$ rails s`
+
+- View the site at <http://localhost:3000>
+- View the resque admin at <http://localhost:3000/resque>
+
+Start the scheduler: `$ rake resque:scheduler`
+
+- Every 30 seconds you should see a new job get added to the queue
+    - `2012-02-17 16:19:59 queueing MyJob (do_my_job)`
+
+Start the worker: `$ rake resque:work`
+
+- Every 30 seconds you should see the output of the perform method in the MyJob class
+    - `Doing my job`
+
+
+
 ## What's Inside?
 
+### Required Gems
 
-### New directory for your job classes: `/app/jobs/`
+    gem 'resque' # background jobs
+    gem 'resque-scheduler' # job scheduling
 
-Holds classes like `myjob.rb`:
+### Home for your job classes: `/app/jobs/`
+
+    # Example: /app/jobs/myjob.rb
 
     module MyJob
       @queue = :my_job_queue
@@ -18,19 +43,29 @@ Holds classes like `myjob.rb`:
       end
     end
 
-### Required Gems
+### Job Schedule
 
-    gem 'resque' # background jobs
-    gem 'resque-scheduler' # job scheduling
+Define job schedules in `/config/resque_schedule.yml`:
 
+    do_my_job:
+      every: 30s
+      class: MyJob
+      args:
+      description: Runs the perform method in MyJob
+
+For ways to define delayed jobs and different schedules, [check here](https://github.com/bvandenbos/resque-scheduler).
+
+### Initializer
+
+`/config/initializers/resque.rb`: configures redis, link jobs folder and reads the schedule at `/config/resque_schedule.yml`.
 
 ### Rake tasks
 
-Rakefile:
+Make the resque tasks available to rake and set default environment variables.
 
-    require 'resque/tasks'
+Rakefile: `require 'resque/tasks'`
 
-Sets the default queue environment variable: `/lib/tasks/resque.rake`:
+Set the default queue environment variable: `/lib/tasks/resque.rake`:
 
     require 'resque/tasks'
     require 'resque_scheduler/tasks'
@@ -39,38 +74,10 @@ Sets the default queue environment variable: `/lib/tasks/resque.rake`:
       ENV['QUEUE'] = '*'
     end
 
-
-### Job Schedule
-
-Define job schedules: `/config/resque_schedule.yml`:
-
-    do_my_job:
-      every: 30s
-      class: MyJob
-      args:
-      description: Runs the perform method in MyJob
-
-
-### Initializers
-
-Configures redis, link jobs folder and reads schedule: `/config/initializers/resque.rb`
-
-
-
 ### Resque admin
 
-When starting the rails server, run the resque admin site with it: `/config.ru`:
+This code in `/config.ru` will run the resque admin site when you start the normal rails server:
 
     run Rack::URLMap.new \
       "/"       => ResqueScheduler::Application,
       "/resque" => Resque::Server.new
-
-
-
-## Getting Started
-
-Start the rails server and resque admin: `$ rails s`
-
-Start the scheduler: `$ rake resque:scheduler`
-
-Start the worker: `$ rake resque:work`
