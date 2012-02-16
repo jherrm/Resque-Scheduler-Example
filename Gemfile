@@ -21,3 +21,7 @@ group :assets do
 end
 
 gem 'jquery-rails'
+
+# Job Scheduling
+gem 'resque' # background jobs
+gem 'resque-scheduler' # job scheduling
