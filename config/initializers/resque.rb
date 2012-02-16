@@ -1,6 +1,6 @@
 require 'resque_scheduler'
 
-Resque.redis = {:host => 'localhost', :port => 6379}
+Resque.redis = 'localhost:6379'
 Resque.redis.namespace = "resque:SchedulerExample"
 
 # If you want to be able to dynamically change the schedule,
